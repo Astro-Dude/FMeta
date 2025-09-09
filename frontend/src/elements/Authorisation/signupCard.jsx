@@ -11,7 +11,7 @@ function SignupCard() {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    mobileOrEmail: "",
+    email: "",
     password: "",
     fullName: "",
     username: "",
@@ -35,25 +35,47 @@ function SignupCard() {
 
     try {
       // Validate required fields
-      if (!formData.fullName || !formData.username || !formData.password) {
-        setError("Name, username and password are required");
+      if (!formData.fullName || !formData.username || !formData.password || !formData.email) {
+        setError("All fields are required");
         setLoading(false);
         return;
       }
 
-      if (!formData.mobileOrEmail) {
-        setError("Either email or phone number is required");
+      // Name validation - letters and spaces only, 2-50 characters
+      const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+      if (!nameRegex.test(formData.fullName)) {
+        setError("Name must be 2-50 characters and contain only letters and spaces");
         setLoading(false);
         return;
       }
 
-      // Determine if input is email or phone
-      const isEmail = formData.mobileOrEmail.includes("@");
+      // Username validation - letters, numbers, dots, underscores only
+      const usernameRegex = /^[a-zA-Z0-9._]{3,30}$/;
+      if (!usernameRegex.test(formData.username)) {
+        setError("Username must be 3-30 characters and contain only letters, numbers, dots, and underscores");
+        setLoading(false);
+        return;
+      }
+
+      // Password validation - at least 6 characters
+      if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters long");
+        setLoading(false);
+        return;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError("Please enter a valid email address");
+        setLoading(false);
+        return;
+      }
       const requestData = {
         name: formData.fullName,
         username: formData.username,
         password: formData.password,
-        ...(isEmail ? { email: formData.mobileOrEmail } : { phone: formData.mobileOrEmail })
+        email: formData.email
       };
 
       const response = await fetch("http://localhost:8000/api/auth/register", {
@@ -144,10 +166,10 @@ function SignupCard() {
         )}
         
         <Input
-          type="text"
-          placeholder="Mobile Number or Email"
-          value={formData.mobileOrEmail}
-          onChange={(e) => handleInputChange("mobileOrEmail", e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={(e) => handleInputChange("email", e.target.value)}
           className="w-full bg-[#121212] border border-[#262626] text-white placeholder-gray-400 text-xs sm:text-sm p-2 sm:p-3 focus:border-gray-400"
           required
         />

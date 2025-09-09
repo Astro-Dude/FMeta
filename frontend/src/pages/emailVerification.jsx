@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
 
@@ -7,9 +7,16 @@ const EmailVerification = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'
   const [message, setMessage] = useState('');
+  const verificationAttempted = useRef(false);
 
   useEffect(() => {
     const verifyEmail = async () => {
+      // Prevent double execution
+      if (verificationAttempted.current) {
+        console.log('Verification already attempted, skipping...');
+        return;
+      }
+      
       const token = searchParams.get('token');
       
       if (!token) {
@@ -17,6 +24,9 @@ const EmailVerification = () => {
         setMessage('Verification token is missing. Please check your email link.');
         return;
       }
+
+      verificationAttempted.current = true;
+      console.log('Starting verification with token:', token);
 
       try {
         const response = await fetch(`${getApiUrl(API_ENDPOINTS.AUTH.VERIFY_EMAIL)}?token=${token}`, {
@@ -27,10 +37,17 @@ const EmailVerification = () => {
         });
 
         const data = await response.json();
+        console.log('Verification response:', data);
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
 
         if (response.ok && data.success) {
           setStatus('success');
-          setMessage(data.message || 'Email verified successfully! You can now log in.');
+          if (data.alreadyVerified) {
+            setMessage('Email is already verified! You can now log in.');
+          } else {
+            setMessage(data.message || 'Email verified successfully! You can now log in.');
+          }
           
           // Redirect to login page after 3 seconds
           setTimeout(() => {
@@ -38,6 +55,7 @@ const EmailVerification = () => {
           }, 3000);
         } else {
           setStatus('error');
+          // Show the exact error message from backend
           setMessage(data.message || 'Email verification failed. Please try again or contact support.');
         }
       } catch (error) {

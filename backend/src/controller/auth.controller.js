@@ -75,10 +75,10 @@ This is an automated message. Please do not reply to this email.`,
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                   <tr>
                     <td style="padding: 40px 30px; text-align: center;">
-                      <h1 style="color: #333333; font-size: 24px; margin: 0 0 20px 0; font-weight: normal;">Welcome to F Meta</h1>
+                      <h1 style="color: #333333; font-size: 24px; margin: 0 0 20px 0; font-weight: normal;">Welcome to F*Meta</h1>
                       <p style="color: #666666; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0;">Hello ${name},</p>
                       <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0 0 30px 0;">
-                        Thank you for creating your F Meta account. To complete your registration and ensure the security of your account, please verify your email address by clicking the button below.
+                        Thank you for creating your F*Meta account. To complete your registration and ensure the security of your account, please verify your email address by clicking the button below.
                       </p>
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
                         <tr>
@@ -106,7 +106,7 @@ This is an automated message. Please do not reply to this email.`,
                     <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #eeeeee;">
                       <p style="color: #999999; font-size: 12px; margin: 0;">
                         Best regards,<br>
-                        The F Meta Team
+                        The F*Meta Team
                       </p>
                       <p style="color: #cccccc; font-size: 11px; margin: 10px 0 0 0;">
                         This is an automated message. Please do not reply to this email.
@@ -286,16 +286,43 @@ export const verifyEmail = async (req, res) => {
       });
     }
 
-    // Find user with this verification token
+    console.log(`🔍 Verifying token: ${token}`);
+    console.log(`⏰ Current time: ${new Date(Date.now())}`);
+
+    // Find user with this verification token (check token first, then expiration)
     const user = await User.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: Date.now() }
+      emailVerificationToken: token
     });
 
     if (!user) {
+      console.log(`❌ No user found with token: ${token}`);
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired verification token"
+        message: "Invalid verification token"
+      });
+    }
+
+    console.log(`👤 Found user: ${user.email}`);
+    console.log(`⏰ Token expires: ${new Date(user.emailVerificationExpires)}`);
+    console.log(`⏰ Current time: ${new Date(Date.now())}`);
+    console.log(`✅ Token valid: ${user.emailVerificationExpires > Date.now()}`);
+
+    // Check if token is expired
+    if (user.emailVerificationExpires <= Date.now()) {
+      console.log(`⏰ Token expired for user: ${user.email}`);
+      return res.status(400).json({
+        success: false,
+        message: "Verification token has expired. Please request a new verification email."
+      });
+    }
+
+    // Check if already verified
+    if (user.isEmailVerified) {
+      console.log(`✅ Email already verified for user: ${user.email}`);
+      return res.status(200).json({
+        success: true,
+        message: "Email is already verified! You can now log in.",
+        alreadyVerified: true
       });
     }
 
@@ -305,13 +332,17 @@ export const verifyEmail = async (req, res) => {
     user.emailVerificationExpires = undefined;
     await user.save();
 
-    // Generate token for login
-    const authToken = generateToken(user._id);
+    console.log(`✅ Email verified successfully for user: ${user.email}`);
 
     res.status(200).json({
       success: true,
-      message: "Email verified successfully! You can now access your account.",
-      token: authToken
+      message: "Email verified successfully! You can now log in.",
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        isEmailVerified: true
+      }
     });
 
   } catch (error) {
