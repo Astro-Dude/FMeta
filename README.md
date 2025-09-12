@@ -26,9 +26,14 @@ F*Meta is a modern social media platform that replicates Instagram's core functi
 - ✅ User Registration & Login
 - ✅ Email Verification System
 - ✅ JWT-based Authentication
-- ✅ Instagram-like UI/UX
-- ✅ Responsive Design
+- ✅ Instagram-like UI/UX with Mobile-First Design
+- ✅ Fully Responsive Design (Mobile/Tablet/Desktop)
+- ✅ Instagram-Style Profile Layouts
+- ✅ Responsive Sidebar Navigation
+- ✅ Mobile Bottom Navigation Bar
 - ✅ Dashboard with Random Posts
+- ✅ User Search & Profile Viewing
+- ✅ Follow/Unfollow System
 - ✅ Password Show/Hide Toggle
 - ✅ Real-time Form Validation
 
@@ -72,16 +77,27 @@ Social_Media/
 └── frontend/
     ├── src/
     │   ├── components/
+    │   │   ├── ProtectedRoute.jsx
+    │   │   └── ui/
+    │   │       ├── button.jsx
+    │   │       └── input.jsx
     │   ├── config/
     │   │   └── api.js
     │   ├── elements/
-    │   │   └── Authorisation/
-    │   │       ├── loginCard.jsx
-    │   │       └── signupCard.jsx
+    │   │   ├── Authorisation/
+    │   │   │   ├── loginCard.jsx
+    │   │   │   └── signupCard.jsx
+    │   │   └── Dashboard/
+    │   │       ├── FeedContent.jsx
+    │   │       ├── ProfileContent.jsx
+    │   │       ├── SearchContent.jsx
+    │   │       └── Sidebar.jsx
     │   ├── pages/
     │   │   ├── authorisation.jsx
     │   │   ├── dashboard.jsx
     │   │   └── emailVerification.jsx
+    │   ├── utils/
+    │   │   └── auth.js
     │   ├── App.jsx
     │   ├── App.css
     │   └── main.jsx
@@ -266,6 +282,35 @@ Authorization: Bearer <jwt_token>
   - Success/error messaging
   - Instagram-style UI
 
+#### Dashboard Components
+- **Sidebar** (`/src/elements/Dashboard/Sidebar.jsx`)
+  - Responsive navigation system
+  - Desktop sidebar (lg: breakpoint)
+  - Mobile bottom navigation bar
+  - Instagram-style navigation icons
+  - User profile integration
+
+- **FeedContent** (`/src/elements/Dashboard/FeedContent.jsx`)
+  - Instagram-like post feed
+  - Random post generation
+  - Responsive grid layout
+  - Interactive post elements
+
+- **ProfileContent** (`/src/elements/Dashboard/ProfileContent.jsx`)
+  - Instagram-style profile layout
+  - Mobile-first responsive design
+  - Desktop/mobile layout variations
+  - Profile picture, stats, and bio sections
+  - Action buttons (Edit profile/Follow/Message)
+  - Posts grid with hover effects
+
+- **SearchContent** (`/src/elements/Dashboard/SearchContent.jsx`)
+  - User search functionality
+  - Recent searches with localStorage
+  - Profile viewing with follow/unfollow
+  - Responsive search results
+  - Instagram-style user cards
+
 #### Pages
 - **Authorisation** (`/src/pages/authorisation.jsx`)
   - Toggle between login/signup
@@ -273,21 +318,56 @@ Authorization: Bearer <jwt_token>
   - Centralized authentication
 
 - **Dashboard** (`/src/pages/dashboard.jsx`)
-  - Instagram-like feed
-  - Random post generation
-  - Sidebar navigation
-  - User authentication check
+  - Main app interface
+  - Responsive layout with sidebar integration
+  - Dynamic content switching (Feed/Search/Profile)
+  - Protected route implementation
 
 - **EmailVerification** (`/src/pages/emailVerification.jsx`)
   - Token-based verification
   - Success/error handling
   - Automatic redirection
 
+#### UI Components
+- **Button** (`/src/components/ui/button.jsx`)
+  - Reusable button component
+  - Multiple variants and sizes
+  - Consistent styling across app
+
+- **Input** (`/src/components/ui/input.jsx`)
+  - Form input component
+  - Validation states
+  - Instagram-style design
+
+### Responsive Design Features
+
+#### Mobile Layout (320px - 1023px)
+- **Profile Layout**: Horizontal layout with profile picture left, stats right
+- **Navigation**: Bottom navigation bar with 5 main icons
+- **Buttons**: Compact sizing with touch-friendly targets
+- **Typography**: Scaled text sizes for mobile readability
+- **Spacing**: Optimized padding and margins for small screens
+
+#### Desktop Layout (1024px+)
+- **Profile Layout**: Traditional side-by-side layout
+- **Navigation**: Left sidebar with full labels
+- **Buttons**: Larger desktop-style buttons
+- **Typography**: Larger text for desktop viewing
+- **Spacing**: Generous padding and spacing
+
+#### Responsive Breakpoints
+- **Base**: Mobile-first (320px+)
+- **sm**: Large mobile (640px+)
+- **md**: Tablet (768px+)
+- **lg**: Desktop transformation (1024px+)
+- **xl**: Large desktop (1280px+)
+
 ### Styling
-- **Framework**: Tailwind CSS
+- **Framework**: Tailwind CSS with custom responsive utilities
 - **Theme**: Dark theme (Instagram-inspired)
-- **Responsive**: Mobile-first design
-- **Icons**: Lucide React
+- **Design System**: Mobile-first with progressive enhancement
+- **Icons**: Lucide React for consistent iconography
+- **Layout**: CSS Grid and Flexbox for responsive layouts
 
 ## 🗄️ Database Schema
 
@@ -488,34 +568,86 @@ node -e "console.log(process.env.Email, process.env.EmailPassword)"
 
 ### Performance Considerations
 - Implement pagination for posts
-- Use MongoDB indexes
-- Optimize bundle size
+- Use MongoDB indexes for faster queries
+- Optimize bundle size with code splitting
 - Implement caching strategies
 - Use CDN for static assets
+- Lazy load images and components
+- Implement virtual scrolling for large lists
+- Optimize responsive images with srcset
+- Use service workers for offline functionality
 
 ## 🎯 Current Implementation Status
 
 ### ✅ Completed Features
-- User registration and login
-- Email verification system
-- JWT authentication
-- Password hashing with bcrypt
-- Instagram-style UI components
-- Responsive design
-- Error and success messaging
-- Dashboard with random posts
-- Email verification page
-- Centralized API configuration
+- **Authentication System**
+  - User registration and login
+  - Email verification system
+  - JWT authentication with refresh tokens
+  - Password hashing with bcrypt
+  - Protected routes implementation
+
+- **User Interface**
+  - Instagram-style UI components
+  - Fully responsive design (mobile/tablet/desktop)
+  - Mobile-first approach with progressive enhancement
+  - Dark theme with Instagram-inspired styling
+
+- **Navigation System**
+  - Responsive sidebar for desktop
+  - Mobile bottom navigation bar
+  - Dynamic content switching
+  - Instagram-style navigation icons
+
+- **Profile System**
+  - User profile viewing and editing
+  - Instagram-like profile layouts
+  - Responsive profile sections
+  - Profile picture, bio, and stats display
+
+- **Search & Discovery**
+  - User search functionality
+  - Recent searches with localStorage
+  - Profile viewing from search results
+  - Follow/unfollow system integration
+
+- **Dashboard Features**
+  - Feed with random posts
+  - Interactive post grid
+  - Responsive layout system
+  - User authentication checks
+
+- **Technical Features**
+  - Error and success messaging
+  - Form validation
+  - API integration
+  - Centralized configuration
+  - Email verification flow
 
 ### 🚧 Pending Features
-- Post creation and management
-- Image upload functionality
-- User profile management
-- Follow/unfollow system
-- Like and comment system
-- Real-time notifications
-- Search functionality
-- Story feature
+- **Post Management**
+  - Post creation and editing
+  - Image upload functionality
+  - Post deletion and archiving
+  - Story feature implementation
+
+- **Social Features**
+  - Like and comment system
+  - Real-time notifications
+  - Direct messaging
+  - Activity feed
+
+- **Enhanced Features**
+  - Advanced search filters
+  - Hashtag system
+  - Location tagging
+  - User mentions
+
+- **Performance & Optimization**
+  - Image optimization
+  - Lazy loading
+  - Caching strategies
+  - Performance monitoring
 
 **Project**: F*Meta Social Media Platform  
 **Version**: 1.0.0

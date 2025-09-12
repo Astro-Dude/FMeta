@@ -55,7 +55,7 @@ function LoginCard() {
         localStorage.setItem("user", JSON.stringify(data.user));
         
         // Redirect to dashboard
-        navigate("/dashboard");
+        navigate("/dashboard?view=home");
       } else {
         setError(data.message || "Login failed");
       }

@@ -11,6 +11,7 @@ function App() {
         <Route path="/" element={<Authorisation />} />
         <Route path="/auth" element={<Authorisation />} />
         <Route path="/verify-email" element={<EmailVerification />} />
+        <Route path="/email-verification" element={<EmailVerification />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>

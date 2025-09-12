@@ -9,6 +9,17 @@ const API_CONFIG = {
       PROFILE: '/api/auth/profile',
       LOGOUT: '/api/auth/logout',
       REFRESH: '/api/auth/refresh'
+    },
+    USER: {
+      PROFILE: '/api/auth/user',
+      POSTS: '/api/auth/user',
+      SEARCH: '/api/auth/search',
+      FOLLOW: '/api/auth/follow',
+      FOLLOW_STATUS: '/api/auth/follow-status'
+    },
+    POSTS: {
+      FEED: '/api/auth/feed',
+      ALL: '/api/auth/all-posts'
     }
   }
 };

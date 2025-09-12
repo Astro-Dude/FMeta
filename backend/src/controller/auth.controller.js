@@ -550,3 +550,503 @@ export const refreshToken = async (req, res) => {
     });
   }
 };
+
+// Get user profile data
+export const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Get user with populated followers, following, and posts
+    const user = await User.findById(userId)
+      .select('-password -emailVerificationToken -emailVerificationExpires')
+      .populate('followers following', 'username name')
+      .populate('posts');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Calculate actual counts from arrays
+    const profileData = {
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      bio: user.bio,
+      followers: user.followers,
+      following: user.following,
+      posts: user.posts,
+      followerCount: user.followers.length,
+      followingCount: user.following.length,
+      postCount: user.posts.length,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    res.status(200).json({
+      success: true,
+      user: profileData
+    });
+
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Get user posts
+export const getUserPosts = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find all posts by the user
+    const posts = await Post.find({ author: userId })
+      .populate('author', 'username name profilePicture')
+      .populate('likes', 'username')
+      .populate('comments.user', 'username')
+      .sort({ createdAt: -1 }); // Most recent first
+
+    // Transform posts to include counts and proper image URLs
+    const transformedPosts = posts.map(post => ({
+      _id: post._id,
+      content: post.content,
+      imageUrl: post.images && post.images.length > 0 ? post.images[0] : null,
+      images: post.images,
+      likesCount: post.likes ? post.likes.length : 0,
+      commentsCount: post.comments ? post.comments.length : 0,
+      author: post.author,
+      location: post.location,
+      hashtags: post.hashtags,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt
+    }));
+
+    res.status(200).json({
+      success: true,
+      posts: transformedPosts,
+      count: transformedPosts.length
+    });
+
+  } catch (error) {
+    console.error('Get user posts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user posts',
+      error: error.message
+    });
+  }
+};
+
+// Search users by username
+export const searchUsers = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || query.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required"
+      });
+    }
+
+    // Search for users whose username contains the query (case-insensitive)
+    const users = await User.find({
+      username: { $regex: query.trim(), $options: 'i' }
+    })
+    .select('-password -emailVerificationToken -emailVerificationExpires')
+    .limit(20); // Limit results to 20 users
+
+    res.status(200).json({
+      success: true,
+      users: users,
+      count: users.length
+    });
+
+  } catch (error) {
+    console.error("Search users error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Follow a user
+export const followUser = async (req, res) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided"
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    const currentUserId = decoded.userId;
+    const { userId } = req.params;
+
+    // Can't follow yourself
+    if (currentUserId === userId) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot follow yourself"
+      });
+    }
+
+    // Get both users
+    const currentUser = await User.findById(currentUserId);
+    const userToFollow = await User.findById(userId);
+
+    if (!currentUser || !userToFollow) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Check if already following
+    const isAlreadyFollowing = currentUser.following.includes(userId);
+
+    if (isAlreadyFollowing) {
+      return res.status(400).json({
+        success: false,
+        message: "You are already following this user"
+      });
+    }
+
+    // Add to following list of current user
+    currentUser.following.push(userId);
+    await currentUser.save();
+
+    // Add to followers list of user being followed
+    userToFollow.followers.push(currentUserId);
+    await userToFollow.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User followed successfully",
+      isFollowing: true
+    });
+
+  } catch (error) {
+    console.error("Follow user error:", error);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token"
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Unfollow a user
+export const unfollowUser = async (req, res) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided"
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    const currentUserId = decoded.userId;
+    const { userId } = req.params;
+
+    // Can't unfollow yourself
+    if (currentUserId === userId) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot unfollow yourself"
+      });
+    }
+
+    // Get both users
+    const currentUser = await User.findById(currentUserId);
+    const userToUnfollow = await User.findById(userId);
+
+    if (!currentUser || !userToUnfollow) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Check if actually following
+    const isFollowing = currentUser.following.includes(userId);
+
+    if (!isFollowing) {
+      return res.status(400).json({
+        success: false,
+        message: "You are not following this user"
+      });
+    }
+
+    // Remove from following list of current user
+    currentUser.following = currentUser.following.filter(id => id.toString() !== userId);
+    await currentUser.save();
+
+    // Remove from followers list of user being unfollowed
+    userToUnfollow.followers = userToUnfollow.followers.filter(id => id.toString() !== currentUserId);
+    await userToUnfollow.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User unfollowed successfully",
+      isFollowing: false
+    });
+
+  } catch (error) {
+    console.error("Unfollow user error:", error);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token"
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Check if current user is following another user
+export const checkFollowStatus = async (req, res) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided"
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    const currentUserId = decoded.userId;
+    const { userId } = req.params;
+
+    // Get both users to check mutual follow status
+    const currentUser = await User.findById(currentUserId);
+    const otherUser = await User.findById(userId);
+
+    if (!currentUser || !otherUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const isFollowing = currentUser.following.includes(userId);
+    const isFollowingMe = otherUser.following.includes(currentUserId);
+
+    res.status(200).json({
+      success: true,
+      isFollowing: isFollowing,
+      isFollowingMe: isFollowingMe
+    });
+
+  } catch (error) {
+    console.error("Check follow status error:", error);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token"
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Get all posts for the home feed with pagination
+export const getAllPosts = async (req, res) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided"
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    const currentUserId = decoded.userId;
+
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get current user to check following status
+    const currentUser = await User.findById(currentUserId);
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Get all posts with pagination
+    const posts = await Post.find({})
+      .populate('author', 'username name')
+      .populate('likes', 'username')
+      .populate('comments.user', 'username name')
+      .sort({ createdAt: -1 }) // Most recent first
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count for pagination info
+    const totalPosts = await Post.countDocuments({});
+    const totalPages = Math.ceil(totalPosts / limit);
+    const hasNextPage = page < totalPages;
+
+    // Transform posts to include counts, follow status, and proper structure
+    const transformedPosts = posts.map(post => ({
+      _id: post._id,
+      content: post.content,
+      imageUrl: post.images && post.images.length > 0 ? post.images[0] : null,
+      images: post.images,
+      likesCount: post.likes ? post.likes.length : 0,
+      commentsCount: post.comments ? post.comments.length : 0,
+      author: {
+        ...post.author.toObject(),
+        isFollowedByCurrentUser: currentUser.following.includes(post.author._id),
+        isCurrentUser: post.author._id.toString() === currentUserId
+      },
+      location: post.location,
+      hashtags: post.hashtags,
+      isLikedByCurrentUser: post.likes ? post.likes.some(like => like._id.toString() === currentUserId) : false,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt
+    }));
+
+    res.status(200).json({
+      success: true,
+      posts: transformedPosts,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalPosts: totalPosts,
+        hasNextPage: hasNextPage,
+        limit: limit
+      }
+    });
+
+  } catch (error) {
+    console.error("Get all posts error:", error);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token"
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Get feed posts for the current user (followed users only)
+export const getFeedPosts = async (req, res) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided"
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    const currentUserId = decoded.userId;
+
+    // Get current user to find who they're following
+    const currentUser = await User.findById(currentUserId);
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Get posts from users that the current user is following + their own posts
+    const followingIds = [...currentUser.following, currentUserId];
+
+    const posts = await Post.find({ author: { $in: followingIds } })
+      .populate('author', 'username name')
+      .populate('likes', 'username')
+      .populate('comments.user', 'username name')
+      .sort({ createdAt: -1 }) // Most recent first
+      .limit(20); // Limit to 20 posts
+
+    // Transform posts to include counts and proper structure
+    const transformedPosts = posts.map(post => ({
+      _id: post._id,
+      content: post.content,
+      imageUrl: post.images && post.images.length > 0 ? post.images[0] : null,
+      images: post.images,
+      likesCount: post.likes ? post.likes.length : 0,
+      commentsCount: post.comments ? post.comments.length : 0,
+      author: post.author,
+      location: post.location,
+      hashtags: post.hashtags,
+      isLikedByCurrentUser: post.likes ? post.likes.some(like => like._id.toString() === currentUserId) : false,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt
+    }));
+
+    res.status(200).json({
+      success: true,
+      posts: transformedPosts,
+      count: transformedPosts.length
+    });
+
+  } catch (error) {
+    console.error("Get feed posts error:", error);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token"
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};

@@ -93,7 +93,7 @@ function SignupCard() {
           // User registered without email or email verification not required
           localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
-          navigate("/dashboard");
+          navigate("/dashboard?view=home");
         } else {
           // Email verification required
           setError("");
