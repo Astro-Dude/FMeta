@@ -4,6 +4,7 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import User from "../models/user.model.js";
 import Post from "../models/post.model.js";
+import { createEmailTransporter, sendEmail } from "../utils/emailService.js";
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -20,24 +21,28 @@ const sendVerificationEmail = async (email, name, token) => {
       throw new Error('Email configuration missing. Please set Email and EmailPassword in .env file');
     }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.Email,
-        pass: process.env.EmailPassword,
-      },
-      // Additional configuration for better deliverability
-      secure: true,
-      requireTLS: true,
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    console.log('📧 Creating transporter...');
+    const transporter = createEmailTransporter();
+
+    // Test the connection before sending
+    console.log('📧 Testing SMTP connection...');
+    try {
+      await transporter.verify();
+      console.log('✅ SMTP connection verified successfully');
+    } catch (verifyError) {
+      console.error('❌ SMTP connection failed, proceeding without verification:', verifyError.message);
+      // Continue without verification as some hosting providers block verify()
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://fmet69.netlify.app';
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
     
-    const info = await transporter.sendMail({
+    console.log("📧 Attempting to send email...");
+    console.log("📧 From:", process.env.Email);
+    console.log("📧 To:", email);
+    console.log("📧 Subject: Please verify your F Meta account");
+    
+    const mailOptions = {
       from: `"F*Meta Team" <${process.env.Email}>`, // More professional sender name
       to: email,
       subject: "Please verify your F Meta account", // More specific, less promotional subject
@@ -128,17 +133,18 @@ This is an automated message. Please do not reply to this email.`,
         'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
         'X-Mailer': 'F Meta Application'
       }
-    });
+    };
     
-    console.log("📧 Attempting to send email...");
-    console.log("📧 From:", process.env.Email);
-    console.log("📧 To:", email);
-    console.log("📧 Subject: Please verify your F Meta account");
+    const emailResult = await sendEmail(transporter, mailOptions);
     
-    console.log("✅ Verification email sent successfully!");
-    console.log("📧 Message ID:", info.messageId);
-    console.log("📧 Email sent to:", email);
-    return { success: true, messageId: info.messageId };
+    if (emailResult.success) {
+      console.log("✅ Verification email sent successfully!");
+      console.log("📧 Message ID:", emailResult.messageId);
+      console.log("📧 Email sent to:", email);
+      return { success: true, messageId: emailResult.messageId };
+    } else {
+      throw new Error(emailResult.error);
+    }
   } catch (error) {
     console.error("❌ Error sending verification email:", error);
     console.error("❌ Error details:", error.message);
