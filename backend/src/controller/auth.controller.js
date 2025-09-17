@@ -4,7 +4,6 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import User from "../models/user.model.js";
 import Post from "../models/post.model.js";
-import { createEmailTransporter, sendEmail, logEmailToConsole } from "../utils/emailService.js";
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -22,7 +21,21 @@ const sendVerificationEmail = async (email, name, token) => {
     }
 
     console.log('📧 Creating transporter...');
-    const transporter = createEmailTransporter();
+    const transporter = nodemailer.createTransporter({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.Email,
+        pass: process.env.EmailPassword,
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 60000,
+      greetingTimeout: 30000,
+      socketTimeout: 60000,
+    });
 
     // Test the connection before sending
     console.log('📧 Testing SMTP connection...');
@@ -135,41 +148,18 @@ This is an automated message. Please do not reply to this email.`,
       }
     };
     
-    const emailResult = await sendEmail(transporter, mailOptions);
+    const info = await transporter.sendMail(mailOptions);
     
-    if (emailResult.success) {
-      console.log("✅ Verification email sent successfully!");
-      console.log("📧 Message ID:", emailResult.messageId);
-      console.log("📧 Email sent to:", email);
-      return { success: true, messageId: emailResult.messageId };
-    } else {
-      // If email sending fails, log to console as fallback
-      console.warn("📧 Email sending failed, logging to console as fallback");
-      const fallbackResult = logEmailToConsole(mailOptions);
-      console.warn("💡 Email logged to console. In production, consider using SendGrid or Mailgun");
-      return { success: true, messageId: fallbackResult.messageId, fallback: true };
-    }
+    console.log("✅ Verification email sent successfully!");
+    console.log("📧 Message ID:", info.messageId);
+    console.log("📧 Email sent to:", email);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("❌ Error sending verification email:", error);
     console.error("❌ Error details:", error.message);
     console.error("❌ Error code:", error.code);
     console.error("❌ Error response:", error.response);
-    
-    // As a last resort, still log the email and continue
-    try {
-      const mailOptions = {
-        from: process.env.Email || 'f.meta.alert@gmail.com',
-        to: email,
-        subject: 'Please verify your F Meta account',
-        text: `Hello ${name}, Please verify your account by clicking: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify?token=${token}`
-      };
-      const fallbackResult = logEmailToConsole(mailOptions);
-      console.warn("💡 Using console fallback due to email service failure");
-      return { success: true, messageId: fallbackResult.messageId, fallback: true };
-    } catch (fallbackError) {
-      console.error("❌ Even console fallback failed:", fallbackError);
-      return { success: false, error: error.message };
-    }
+    return { success: false, error: error.message };
   }
 };
 
