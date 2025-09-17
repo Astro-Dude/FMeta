@@ -130,13 +130,20 @@ This is an automated message. Please do not reply to this email.`,
       }
     });
     
-    console.log("Verification email sent successfully!");
-    console.log("Message ID:", info.messageId);
-    console.log("Email sent to:", email);
+    console.log("📧 Attempting to send email...");
+    console.log("📧 From:", process.env.Email);
+    console.log("📧 To:", email);
+    console.log("📧 Subject: Please verify your F Meta account");
+    
+    console.log("✅ Verification email sent successfully!");
+    console.log("📧 Message ID:", info.messageId);
+    console.log("📧 Email sent to:", email);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Error sending verification email:", error);
-    console.error("Error details:", error.message);
+    console.error("❌ Error sending verification email:", error);
+    console.error("❌ Error details:", error.message);
+    console.error("❌ Error code:", error.code);
+    console.error("❌ Error response:", error.response);
     return { success: false, error: error.message };
   }
 };
@@ -213,14 +220,21 @@ export const registerUser = async (req, res) => {
 
     // Send verification email if email is provided
     if (email) {
-      console.log("Attempting to send email to:", email);
+      console.log("🔄 Email provided, attempting to send verification email to:", email);
+      console.log("🔄 Generated token:", newUser.emailVerificationToken);
+      console.log("🔄 Token expires:", new Date(newUser.emailVerificationExpires));
+      
       const emailResult = await sendVerificationEmail(email, name, newUser.emailVerificationToken);
       
       if (!emailResult.success) {
-        console.error("Failed to send verification email:", emailResult.error);
+        console.error("❌ Failed to send verification email:", emailResult.error);
         // Don't throw error - registration should still succeed even if email fails
         // But we could add additional logging or notifications here
+      } else {
+        console.log("✅ Verification email sent successfully with message ID:", emailResult.messageId);
       }
+    } else {
+      console.log("ℹ️ No email provided, skipping email verification");
     }
     await newUser.save();
 

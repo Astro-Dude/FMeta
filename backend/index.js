@@ -88,7 +88,11 @@ app.listen(PORT, async () => {
   console.log(`🚀 Server started on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📧 Email configured: ${process.env.Email ? 'Yes' : 'No'}`);
-  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'Not set'}`);
+  console.log(`� Email value: ${process.env.Email ? `${process.env.Email.substring(0, 3)}***` : 'NOT SET'}`);
+  console.log(`🔑 Email password configured: ${process.env.EmailPassword ? 'Yes' : 'No'}`);
+  console.log(`�🔗 Frontend URL: ${process.env.FRONTEND_URL || 'Not set (using default)'}`);
+  console.log(`🔑 JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
+  console.log(`🗄️ MongoDB URI configured: ${process.env.MONGODB_URI ? 'Yes' : 'No'}`);
   
   try {
     await connectDb();
