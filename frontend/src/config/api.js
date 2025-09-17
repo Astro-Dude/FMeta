@@ -1,7 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_BACKEND_URL || 
-            (import.meta.env.PROD ? 'https://fmeta.onrender.com' : 'http://localhost:8000'),
+  BASE_URL: 'https://fmeta.onrender.com',
   ENDPOINTS: {
     AUTH: {
       LOGIN: '/api/auth/login',
