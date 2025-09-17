@@ -1,6 +1,7 @@
 // API Configuration
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_BACKEND_URL,
+  BASE_URL: import.meta.env.VITE_BACKEND_URL || 
+            (import.meta.env.PROD ? 'https://fmeta.onrender.com' : 'http://localhost:8000'),
   ENDPOINTS: {
     AUTH: {
       LOGIN: '/api/auth/login',
@@ -26,7 +27,9 @@ const API_CONFIG = {
 
 // Helper function to build full API URL
 export const getApiUrl = (endpoint) => {
-  return `${API_CONFIG.BASE_URL}${endpoint}`;
+  const fullUrl = `${API_CONFIG.BASE_URL}${endpoint}`;
+  console.log('API URL:', fullUrl); // Debug log
+  return fullUrl;
 };
 
 // Export endpoints for easy access
