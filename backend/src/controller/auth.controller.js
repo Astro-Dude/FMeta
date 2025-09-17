@@ -34,7 +34,7 @@ const sendVerificationEmail = async (email, name, token) => {
       }
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://fmet69.netlify.app';
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
     
     const info = await transporter.sendMail({
@@ -211,8 +211,6 @@ export const registerUser = async (req, res) => {
     // Create new user
     const newUser = new User(userObj);
 
-    await newUser.save();
-
     // Send verification email if email is provided
     if (email) {
       console.log("Attempting to send email to:", email);
@@ -224,6 +222,8 @@ export const registerUser = async (req, res) => {
         // But we could add additional logging or notifications here
       }
     }
+    await newUser.save();
+
 
     // Generate token only if email is verified OR if no email provided
     let token = null;
