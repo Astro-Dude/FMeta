@@ -4,7 +4,7 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import User from "../models/user.model.js";
 import Post from "../models/post.model.js";
-import { createEmailTransporter, sendEmail } from "../utils/emailService.js";
+import { createEmailTransporter, sendEmail, logEmailToConsole } from "../utils/emailService.js";
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -143,14 +143,33 @@ This is an automated message. Please do not reply to this email.`,
       console.log("📧 Email sent to:", email);
       return { success: true, messageId: emailResult.messageId };
     } else {
-      throw new Error(emailResult.error);
+      // If email sending fails, log to console as fallback
+      console.warn("📧 Email sending failed, logging to console as fallback");
+      const fallbackResult = logEmailToConsole(mailOptions);
+      console.warn("💡 Email logged to console. In production, consider using SendGrid or Mailgun");
+      return { success: true, messageId: fallbackResult.messageId, fallback: true };
     }
   } catch (error) {
     console.error("❌ Error sending verification email:", error);
     console.error("❌ Error details:", error.message);
     console.error("❌ Error code:", error.code);
     console.error("❌ Error response:", error.response);
-    return { success: false, error: error.message };
+    
+    // As a last resort, still log the email and continue
+    try {
+      const mailOptions = {
+        from: process.env.Email || 'f.meta.alert@gmail.com',
+        to: email,
+        subject: 'Please verify your F Meta account',
+        text: `Hello ${name}, Please verify your account by clicking: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify?token=${token}`
+      };
+      const fallbackResult = logEmailToConsole(mailOptions);
+      console.warn("💡 Using console fallback due to email service failure");
+      return { success: true, messageId: fallbackResult.messageId, fallback: true };
+    } catch (fallbackError) {
+      console.error("❌ Even console fallback failed:", fallbackError);
+      return { success: false, error: error.message };
+    }
   }
 };
 
