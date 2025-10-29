@@ -15,30 +15,49 @@ const generateToken = (userId) => {
 // Email sending utility function
 const sendVerificationEmail = async (email, name, token) => {
   try {
-    // Validate that email environment variables are set
-    if (!process.env.Email || !process.env.EmailPassword) {
-      throw new Error('Email configuration missing. Please set Email and EmailPassword in .env file');
-    }
+    let transporter;
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.Email,
-        pass: process.env.EmailPassword,
-      },
-      // Additional configuration for better deliverability
-      secure: true,
-      requireTLS: true,
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    // Check if SendGrid API key is available (recommended for production)
+    if (process.env.SENDGRID_API_KEY) {
+      console.log('📧 Using SendGrid for email delivery');
+      transporter = nodemailer.createTransport({
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        secure: false,
+        auth: {
+          user: 'apikey',
+          pass: process.env.SENDGRID_API_KEY,
+        },
+      });
+    } 
+    // Fallback to Gmail SMTP if SendGrid is not configured
+    else if (process.env.Email && process.env.EmailPassword) {
+      console.log('📧 Using Gmail SMTP for email delivery');
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.Email,
+          pass: process.env.EmailPassword,
+        },
+        secure: true,
+        requireTLS: true,
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    } 
+    else {
+      throw new Error('Email configuration missing. Please set SENDGRID_API_KEY or (Email and EmailPassword) in .env file');
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
     
+    // Use SendGrid verified sender email if available, otherwise use Gmail
+    const fromEmail = process.env.SENDGRID_VERIFIED_SENDER || process.env.Email || 'noreply@fmeta.app';
+    
     const info = await transporter.sendMail({
-      from: `"F*Meta Team" <${process.env.Email}>`, // More professional sender name
+      from: `"F*Meta Team" <${fromEmail}>`, // More professional sender name
       to: email,
       subject: "Please verify your F Meta account", // More specific, less promotional subject
       // Enhanced plain text version
