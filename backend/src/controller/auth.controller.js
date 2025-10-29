@@ -57,27 +57,25 @@ const sendVerificationEmail = async (email, name, token) => {
     const fromEmail = process.env.SENDGRID_VERIFIED_SENDER || process.env.Email || 'noreply@fmeta.app';
     
     const info = await transporter.sendMail({
-      from: `"F*Meta Team" <${fromEmail}>`, // More professional sender name
+      from: `"F Meta" <${fromEmail}>`, // Simplified sender name (avoid special characters like *)
       to: email,
-      subject: "Please verify your F Meta account", // More specific, less promotional subject
+      subject: "Verify your email address", // Simple, non-promotional subject
+      replyTo: fromEmail,
       // Enhanced plain text version
       text: `Hello ${name},
 
-Welcome to F Meta! To complete your account setup, please verify your email address.
+Thank you for signing up with F Meta.
 
-Click here to verify: ${verificationUrl}
+To complete your account setup, please verify your email address by clicking the link below:
 
-If you're unable to click the link, copy and paste it into your browser's address bar.
+${verificationUrl}
 
-This verification link will expire in 24 hours for security reasons.
+This verification link will expire in 24 hours.
 
-If you didn't create an account with F Meta, please ignore this email.
+If you did not create this account, please ignore this email.
 
-Thank you,
-The F Meta Team
-
----
-This is an automated message. Please do not reply to this email.`,
+Best regards,
+The F Meta Team`,
       // Enhanced HTML email with better spam score
       html: `
         <!DOCTYPE html>
@@ -85,50 +83,58 @@ This is an automated message. Please do not reply to this email.`,
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Verify Your F Meta Account</title>
+          <title>Verify Your Email Address</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f7f7f7;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f7f7f7;">
             <tr>
-              <td align="center" style="padding: 40px 0;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
                   <tr>
-                    <td style="padding: 40px 30px; text-align: center;">
-                      <h1 style="color: #333333; font-size: 24px; margin: 0 0 20px 0; font-weight: normal;">Welcome to F*Meta</h1>
-                      <p style="color: #666666; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0;">Hello ${name},</p>
-                      <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0 0 30px 0;">
-                        Thank you for creating your F*Meta account. To complete your registration and ensure the security of your account, please verify your email address by clicking the button below.
+                    <td style="padding: 40px 40px 30px 40px;">
+                      <h1 style="color: #1a1a1a; font-size: 24px; margin: 0 0 24px 0; font-weight: 600; line-height: 1.3;">Verify your email address</h1>
+                      <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${name},</p>
+                      <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                        Thank you for signing up with F Meta. To complete your account setup and start using our platform, please verify your email address.
                       </p>
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 0 24px 0;">
                         <tr>
-                          <td style="background-color: #4F46E5; border-radius: 6px;">
-                            <a href="${verificationUrl}" style="display: inline-block; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 6px;">Verify My Account</a>
+                          <td style="background-color: #5b5fc7; border-radius: 6px; text-align: center;">
+                            <a href="${verificationUrl}" style="display: inline-block; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px;" target="_blank">Verify Email Address</a>
                           </td>
                         </tr>
                       </table>
-                      <p style="color: #999999; font-size: 12px; line-height: 1.4; margin: 30px 0 0 0;">
-                        If the button above doesn't work, you can copy and paste this link into your browser:
+                      <p style="color: #6a6a6a; font-size: 14px; line-height: 1.5; margin: 0 0 16px 0;">
+                        Or copy and paste this URL into your browser:
                       </p>
-                      <p style="color: #4F46E5; font-size: 12px; word-break: break-all; margin: 10px 0 20px 0;">
+                      <p style="color: #5b5fc7; font-size: 13px; word-break: break-all; margin: 0 0 24px 0; padding: 12px; background-color: #f7f7f7; border-radius: 4px;">
                         ${verificationUrl}
                       </p>
-                      <hr style="border: none; border-top: 1px solid #eeeeee; margin: 30px 0;">
-                      <p style="color: #999999; font-size: 12px; line-height: 1.4; margin: 0;">
-                        This verification link will expire in 24 hours for security purposes.
+                      <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 24px 0;">
+                      <p style="color: #8a8a8a; font-size: 13px; line-height: 1.5; margin: 0 0 8px 0;">
+                        This verification link will expire in 24 hours.
                       </p>
-                      <p style="color: #999999; font-size: 12px; line-height: 1.4; margin: 10px 0 0 0;">
-                        If you didn't create an account with F Meta, you can safely ignore this email.
+                      <p style="color: #8a8a8a; font-size: 13px; line-height: 1.5; margin: 0;">
+                        If you did not create an account, you can safely ignore this email.
                       </p>
                     </td>
                   </tr>
                   <tr>
-                    <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #eeeeee;">
-                      <p style="color: #999999; font-size: 12px; margin: 0;">
-                        Best regards,<br>
-                        The F*Meta Team
+                    <td style="background-color: #fafafa; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e5e5; border-radius: 0 0 8px 8px;">
+                      <p style="color: #8a8a8a; font-size: 13px; margin: 0 0 8px 0; line-height: 1.4;">
+                        Best regards,<br>The F Meta Team
                       </p>
-                      <p style="color: #cccccc; font-size: 11px; margin: 10px 0 0 0;">
-                        This is an automated message. Please do not reply to this email.
+                      <p style="color: #b0b0b0; font-size: 12px; margin: 0; line-height: 1.4;">
+                        &copy; ${new Date().getFullYear()} F Meta. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px;">
+                  <tr>
+                    <td style="padding: 20px; text-align: center;">
+                      <p style="color: #999999; font-size: 12px; margin: 0; line-height: 1.4;">
+                        This email was sent to ${email} because you signed up for F Meta.
                       </p>
                     </td>
                   </tr>
@@ -139,13 +145,13 @@ This is an automated message. Please do not reply to this email.`,
         </body>
         </html>
       `,
-      // Additional headers to improve deliverability
+      // Improved headers for better deliverability and spam score
       headers: {
-        'X-Priority': '3',
-        'X-MSMail-Priority': 'Normal',
-        'Importance': 'Normal',
-        'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
-        'X-Mailer': 'F Meta Application'
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'high',
+        'X-Entity-Ref-ID': `fmeta-${Date.now()}`,
+        'Message-ID': `<${Date.now()}.${email.replace('@', '-at-')}@fmeta.app>`,
       }
     });
     
