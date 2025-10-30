@@ -5,6 +5,7 @@ import Sidebar from "../elements/Dashboard/Sidebar.jsx";
 import FeedContent from "../elements/Dashboard/FeedContent.jsx";
 import ProfileContent from "../elements/Dashboard/ProfileContent.jsx";
 import SearchContent from "../elements/Dashboard/SearchContent.jsx";
+import CreateContent from "../elements/Dashboard/CreateContent.jsx";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -48,7 +49,7 @@ function Dashboard() {
 
   // Ensure we have a valid view parameter
   useEffect(() => {
-    const validViews = ['home', 'search', 'profile'];
+    const validViews = ['home', 'search', 'profile', 'create'];
     const currentView = searchParams.get('view');
     
     if (!currentView || !validViews.includes(currentView)) {
@@ -73,11 +74,22 @@ function Dashboard() {
       <div className="lg:pl-64 w-full bg-black min-h-screen pt-16 pb-16 lg:pt-0 lg:pb-0">
         <div className="flex justify-center min-h-screen px-4">
           {/* Render content based on active view */}
-          {activeView === 'home' && <FeedContent user={user} />}
+          {(activeView === 'home' || activeView === 'create') && <FeedContent user={user} />}
           {activeView === 'search' && <SearchContent user={user} />}
           {activeView === 'profile' && <ProfileContent user={user} />}
         </div>
       </div>
+
+      {/* Create Content Modal - Always render on top when create view is active */}
+      {activeView === 'create' && (
+        <CreateContent 
+          onClose={() => setActiveView('home')}
+          onSuccess={() => {
+            setActiveView('home');
+            // Optionally refresh the feed here
+          }}
+        />
+      )}
     </div>
   );
 }

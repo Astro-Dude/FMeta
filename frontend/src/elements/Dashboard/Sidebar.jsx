@@ -75,7 +75,12 @@ function Sidebar({ user, activeView, setActiveView }) {
               <span className="text-lg">Notifications</span>
             </button>
 
-            <button className="flex items-center space-x-4 px-2 py-3 rounded-lg hover:bg-[#262626] transition-colors w-full text-left">
+            <button 
+              onClick={() => setActiveView('create')}
+              className={`flex items-center space-x-4 px-2 py-3 rounded-lg transition-colors w-full text-left ${
+                activeView === 'create' ? 'bg-[#262626]' : 'hover:bg-[#262626]'
+              }`}
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
@@ -156,7 +161,12 @@ function Sidebar({ user, activeView, setActiveView }) {
             </svg>
           </button>
 
-          <button className="flex flex-col items-center py-2 px-3 rounded-lg transition-colors text-gray-400">
+          <button 
+            onClick={() => setActiveView('create')}
+            className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+              activeView === 'create' ? 'text-white' : 'text-gray-400'
+            }`}
+          >
             <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>

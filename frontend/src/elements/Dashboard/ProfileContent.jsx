@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getApiUrl, API_ENDPOINTS } from "../../config/api.js";
+import PostDetailModal from "./PostDetailModal.jsx";
 
 function ProfileContent({ user, viewingUserId, onBackToSearch }) {
   const [activeTab, setActiveTab] = useState('posts');
@@ -7,6 +8,7 @@ function ProfileContent({ user, viewingUserId, onBackToSearch }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedPost, setSelectedPost] = useState(null);
 
   // Determine which user profile to show
   const targetUserId = viewingUserId || user._id;
@@ -75,7 +77,7 @@ function ProfileContent({ user, viewingUserId, onBackToSearch }) {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col items-center justify-center">
+      <div className="w-full lg:max-w-4xl lg:mx-auto px-4 py-6 flex flex-col items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500 mb-4"></div>
       {/* <div className="text-gray-400 text-lg">Loading profile...</div> */}
       </div>
@@ -84,14 +86,14 @@ function ProfileContent({ user, viewingUserId, onBackToSearch }) {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6 text-center">
+      <div className="w-full lg:max-w-4xl lg:mx-auto px-4 py-6 text-center">
         <div className="text-red-400 text-lg">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="w-full lg:max-w-4xl lg:mx-auto px-2 sm:px-4 py-6">
       {/* Back Button (only show when viewing another user's profile) */}
       {!isViewingOwnProfile && onBackToSearch && (
         <div className="mb-4">
@@ -284,21 +286,52 @@ function ProfileContent({ user, viewingUserId, onBackToSearch }) {
           </div>
         ) : activeTab === 'posts' && (
           <div className="grid grid-cols-3 gap-0.5 sm:gap-1 md:gap-2 lg:gap-3">
-            {posts.map((post) => (
-              <div key={post._id} className="aspect-square relative group cursor-pointer">
-                <img 
-                  src={post.imageUrl || post.image || "https://picsum.photos/300/300?random=" + post._id} 
-                  alt={`Post ${post._id}`}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-1 text-white">
+            {posts.map((post) => {
+              // Get the thumbnail or first image from media array, fallback to imageUrl
+              const getThumbnailUrl = () => {
+                if (post.media && post.media.length > 0) {
+                  // If there's a thumbnail, use it; otherwise use the first media url
+                  return post.media[0].thumbnail || post.media[0].url;
+                }
+                return post.imageUrl || post.image;
+              };
+
+              const thumbnailUrl = getThumbnailUrl();
+              const fallbackUrl = `https://picsum.photos/300/300?random=${post._id}`;
+
+              // Validate URL (check if it's a valid base64 or http/https URL)
+              const isValidUrl = thumbnailUrl && (
+                thumbnailUrl.startsWith('data:') || 
+                thumbnailUrl.startsWith('http://') || 
+                thumbnailUrl.startsWith('https://')
+              );
+
+              return (
+                <div 
+                  key={post._id} 
+                  className="aspect-square relative group cursor-pointer"
+                  onClick={() => {
+                    console.log('Profile post clicked:', post);
+                    setSelectedPost(post);
+                  }}
+                >
+                  <img 
+                    src={isValidUrl ? thumbnailUrl : fallbackUrl}
+                    alt={`Post ${post._id}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log('Failed to load image:', e.target.src);
+                      e.target.src = fallbackUrl;
+                    }}
+                  />
+                  <div className="absolute inset-0 backdrop-blur-sm bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 sm:gap-4">
+                  <div className="flex items-center gap-1 text-white drop-shadow-lg">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                     </svg>
                     <span className="text-xs sm:text-sm font-medium">{post.likesCount || post.likes || 0}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-white">
+                  <div className="flex items-center gap-1 text-white drop-shadow-lg">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M21 6h-2l-1.27-1.27A2 2 0 0 0 16.32 4H7.68a2 2 0 0 0-1.41.59L5 6H3a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a1 1 0 0 0-1-1zM12 17a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"/>
                     </svg>
@@ -306,7 +339,8 @@ function ProfileContent({ user, viewingUserId, onBackToSearch }) {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -323,6 +357,30 @@ function ProfileContent({ user, viewingUserId, onBackToSearch }) {
           </div>
         )}
       </div>
+
+      {/* Post Detail Modal */}
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          user={user}
+          onClose={() => setSelectedPost(null)}
+          onPostUpdate={(updatedPost) => {
+            // Handle post deletion
+            if (updatedPost.deleted) {
+              setPosts(prev => prev.filter(p => p._id !== updatedPost._id));
+              setSelectedPost(null);
+              return;
+            }
+            
+            // Update the post in the posts array
+            setPosts(prev => prev.map(p => 
+              p._id === updatedPost._id ? { ...p, ...updatedPost } : p
+            ));
+            // Update selected post to reflect changes
+            setSelectedPost(updatedPost);
+          }}
+        />
+      )}
     </div>
   );
 }
