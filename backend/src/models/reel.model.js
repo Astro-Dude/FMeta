@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const postSchema = new mongoose.Schema({
+const reelSchema = new mongoose.Schema({
   content: {
     type: String,
   },
@@ -9,17 +9,14 @@ const postSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
-  media: [{
+  video: {
     url: {
       type: String,
       required: true
     },
-    type: {
-      type: String,
-      enum: ['image'],
-      required: true
-    }
-  }],
+    thumbnail: String,
+    duration: Number // in seconds
+  },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
@@ -35,7 +32,6 @@ const postSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
-  location: String,
   hashtags: [String],
   mentions: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -51,7 +47,7 @@ const postSchema = new mongoose.Schema({
 });
 
 // Index for efficient queries
-postSchema.index({ author: 1, createdAt: -1 });
+reelSchema.index({ author: 1, createdAt: -1 });
 
-const Post = mongoose.model("Post", postSchema);
-export default Post;
+const Reel = mongoose.model("Reel", reelSchema);
+export default Reel;

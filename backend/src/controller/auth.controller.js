@@ -686,6 +686,19 @@ export const getUserProfile = async (req, res) => {
 export const getUserPosts = async (req, res) => {
   try {
     const { userId } = req.params;
+    
+    // Get current user ID from token
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    let currentUserId = null;
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+        currentUserId = decoded.userId;
+      } catch (err) {
+        console.log('Token verification failed:', err.message);
+      }
+    }
 
     // Find all posts by the user
     const posts = await Post.find({ author: userId })
@@ -698,13 +711,30 @@ export const getUserPosts = async (req, res) => {
     const transformedPosts = posts.map(post => ({
       _id: post._id,
       content: post.content,
-      imageUrl: post.images && post.images.length > 0 ? post.images[0] : null,
+      contentType: post.contentType,
+      // Support both old (images) and new (media) schema
+      imageUrl: (post.images && post.images.length > 0) 
+        ? post.images[0] 
+        : (post.media && post.media.length > 0) 
+          ? post.media[0].url 
+          : null,
       images: post.images,
+      media: post.media,
       likesCount: post.likes ? post.likes.length : 0,
       commentsCount: post.comments ? post.comments.length : 0,
+      comments: post.comments ? post.comments.map(comment => ({
+        _id: comment._id,
+        text: comment.text,
+        author: comment.user,
+        createdAt: comment.createdAt
+      })) : [],
       author: post.author,
       location: post.location,
       hashtags: post.hashtags,
+      mentions: post.mentions,
+      music: post.music,
+      visibility: post.visibility,
+      isLikedByCurrentUser: currentUserId ? post.likes.some(like => like._id.toString() === currentUserId) : false,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt
     }));
@@ -1014,10 +1044,23 @@ export const getAllPosts = async (req, res) => {
     const transformedPosts = posts.map(post => ({
       _id: post._id,
       content: post.content,
-      imageUrl: post.images && post.images.length > 0 ? post.images[0] : null,
+      contentType: post.contentType,
+      // Support both old (images) and new (media) schema
+      imageUrl: (post.images && post.images.length > 0) 
+        ? post.images[0] 
+        : (post.media && post.media.length > 0) 
+          ? post.media[0].url 
+          : null,
       images: post.images,
+      media: post.media,
       likesCount: post.likes ? post.likes.length : 0,
       commentsCount: post.comments ? post.comments.length : 0,
+      comments: post.comments ? post.comments.map(comment => ({
+        _id: comment._id,
+        text: comment.text,
+        author: comment.user,
+        createdAt: comment.createdAt
+      })) : [],
       author: {
         ...post.author.toObject(),
         isFollowedByCurrentUser: currentUser.following.includes(post.author._id),
@@ -1025,6 +1068,9 @@ export const getAllPosts = async (req, res) => {
       },
       location: post.location,
       hashtags: post.hashtags,
+      mentions: post.mentions,
+      music: post.music,
+      visibility: post.visibility,
       isLikedByCurrentUser: post.likes ? post.likes.some(like => like._id.toString() === currentUserId) : false,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt

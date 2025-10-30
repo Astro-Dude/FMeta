@@ -7,6 +7,7 @@ import cors from 'cors';
 import {connectDb} from './src/utils/db.js';
 import authRoutes from './src/routes/auth.routes.js';
 import testRoutes from './src/routes/test.routes.js';
+import contentRoutes from './src/routes/content.routes.js';
 
 // setup
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 try {
   app.use('/api/test', testRoutes);
   app.use('/api/auth', authRoutes);
+  app.use('/api/content', contentRoutes);
 } catch (error) {
   console.error('Route setup error:', error);
 }
