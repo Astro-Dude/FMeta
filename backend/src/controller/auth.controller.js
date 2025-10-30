@@ -27,13 +27,14 @@ const sendVerificationEmail = async (email, name, token) => {
       // Set SendGrid API key
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-      // Prepare email message
+      // Prepare email message with improved deliverability settings
       const msg = {
         to: email,
         from: {
           email: fromEmail,
           name: 'F Meta'
         },
+        replyTo: fromEmail,
         subject: 'Verify your email address',
         text: `Hello ${name},
 
@@ -49,6 +50,24 @@ If you did not create this account, please ignore this email.
 
 Best regards,
 The F Meta Team`,
+        // Anti-spam headers
+        headers: {
+          'X-Entity-Ref-ID': crypto.randomBytes(16).toString('hex'),
+          'List-Unsubscribe': `<${frontendUrl}/unsubscribe>`,
+        },
+        trackingSettings: {
+          clickTracking: {
+            enable: false
+          },
+          openTracking: {
+            enable: false
+          }
+        },
+        mailSettings: {
+          bypassListManagement: {
+            enable: false
+          }
+        },
         html: `
           <!DOCTYPE html>
           <html lang="en">
@@ -57,63 +76,36 @@ The F Meta Team`,
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Verify Your Email Address</title>
           </head>
-          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f7f7f7;">
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f7f7f7;">
-              <tr>
-                <td align="center" style="padding: 40px 20px;">
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
-                    <tr>
-                      <td style="padding: 40px 40px 30px 40px;">
-                        <h1 style="color: #1a1a1a; font-size: 24px; margin: 0 0 24px 0; font-weight: 600; line-height: 1.3;">Verify your email address</h1>
-                        <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${name},</p>
-                        <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                          Thank you for signing up with F Meta. To complete your account setup and start using our platform, please verify your email address.
-                        </p>
-                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 0 24px 0;">
-                          <tr>
-                            <td style="background-color: #5b5fc7; border-radius: 6px; text-align: center;">
-                              <a href="${verificationUrl}" style="display: inline-block; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px;" target="_blank">Verify Email Address</a>
-                            </td>
-                          </tr>
-                        </table>
-                        <p style="color: #6a6a6a; font-size: 14px; line-height: 1.5; margin: 0 0 16px 0;">
-                          Or copy and paste this URL into your browser:
-                        </p>
-                        <p style="color: #5b5fc7; font-size: 13px; word-break: break-all; margin: 0 0 24px 0; padding: 12px; background-color: #f7f7f7; border-radius: 4px;">
-                          ${verificationUrl}
-                        </p>
-                        <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 24px 0;">
-                        <p style="color: #8a8a8a; font-size: 13px; line-height: 1.5; margin: 0 0 8px 0;">
-                          This verification link will expire in 24 hours.
-                        </p>
-                        <p style="color: #8a8a8a; font-size: 13px; line-height: 1.5; margin: 0;">
-                          If you did not create an account, you can safely ignore this email.
-                        </p>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="background-color: #fafafa; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e5e5; border-radius: 0 0 8px 8px;">
-                        <p style="color: #8a8a8a; font-size: 13px; margin: 0 0 8px 0; line-height: 1.4;">
-                          Best regards,<br>The F Meta Team
-                        </p>
-                        <p style="color: #b0b0b0; font-size: 12px; margin: 0; line-height: 1.4;">
-                          &copy; ${new Date().getFullYear()} F Meta. All rights reserved.
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px;">
-                    <tr>
-                      <td style="padding: 20px; text-align: center;">
-                        <p style="color: #999999; font-size: 12px; margin: 0; line-height: 1.4;">
-                          This email was sent to ${email} because you signed up for F Meta.
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
+          <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #ffffff;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background-color: #ffffff; padding: 30px; border: 1px solid #dddddd;">
+                <h2 style="color: #333333; font-size: 20px; margin-bottom: 20px;">Verify your email address</h2>
+                <p style="color: #333333; font-size: 15px; line-height: 1.5; margin-bottom: 15px;">Hi ${name},</p>
+                <p style="color: #333333; font-size: 15px; line-height: 1.5; margin-bottom: 20px;">
+                  Thank you for registering with F Meta. Please verify your email address by clicking the button below:
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${verificationUrl}" style="display: inline-block; background-color: #0066cc; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 4px; font-size: 15px;">Verify Email</a>
+                </div>
+                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin-bottom: 15px;">
+                  If the button doesn't work, copy and paste this link into your browser:
+                </p>
+                <p style="color: #0066cc; font-size: 13px; word-break: break-all; margin-bottom: 20px;">
+                  ${verificationUrl}
+                </p>
+                <p style="color: #666666; font-size: 13px; line-height: 1.5; margin-bottom: 10px;">
+                  This link will expire in 24 hours.
+                </p>
+                <p style="color: #666666; font-size: 13px; line-height: 1.5;">
+                  If you didn't create this account, please ignore this email.
+                </p>
+                <hr style="border: none; border-top: 1px solid #dddddd; margin: 25px 0;">
+                <p style="color: #999999; font-size: 12px; line-height: 1.4; margin: 0;">
+                  F Meta Team<br>
+                  This is an automated message, please do not reply to this email.
+                </p>
+              </div>
+            </div>
           </body>
           </html>
         `,
@@ -171,72 +163,43 @@ The F Meta Team`,
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Verify Your Email Address</title>
           </head>
-          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f7f7f7;">
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f7f7f7;">
-              <tr>
-                <td align="center" style="padding: 40px 20px;">
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
-                    <tr>
-                      <td style="padding: 40px 40px 30px 40px;">
-                        <h1 style="color: #1a1a1a; font-size: 24px; margin: 0 0 24px 0; font-weight: 600; line-height: 1.3;">Verify your email address</h1>
-                        <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${name},</p>
-                        <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                          Thank you for signing up with F Meta. To complete your account setup and start using our platform, please verify your email address.
-                        </p>
-                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 0 24px 0;">
-                          <tr>
-                            <td style="background-color: #5b5fc7; border-radius: 6px; text-align: center;">
-                              <a href="${verificationUrl}" style="display: inline-block; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px;" target="_blank">Verify Email Address</a>
-                            </td>
-                          </tr>
-                        </table>
-                        <p style="color: #6a6a6a; font-size: 14px; line-height: 1.5; margin: 0 0 16px 0;">
-                          Or copy and paste this URL into your browser:
-                        </p>
-                        <p style="color: #5b5fc7; font-size: 13px; word-break: break-all; margin: 0 0 24px 0; padding: 12px; background-color: #f7f7f7; border-radius: 4px;">
-                          ${verificationUrl}
-                        </p>
-                        <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 24px 0;">
-                        <p style="color: #8a8a8a; font-size: 13px; line-height: 1.5; margin: 0 0 8px 0;">
-                          This verification link will expire in 24 hours.
-                        </p>
-                        <p style="color: #8a8a8a; font-size: 13px; line-height: 1.5; margin: 0;">
-                          If you did not create an account, you can safely ignore this email.
-                        </p>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="background-color: #fafafa; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e5e5; border-radius: 0 0 8px 8px;">
-                        <p style="color: #8a8a8a; font-size: 13px; margin: 0 0 8px 0; line-height: 1.4;">
-                          Best regards,<br>The F Meta Team
-                        </p>
-                        <p style="color: #b0b0b0; font-size: 12px; margin: 0; line-height: 1.4;">
-                          &copy; ${new Date().getFullYear()} F Meta. All rights reserved.
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px;">
-                    <tr>
-                      <td style="padding: 20px; text-align: center;">
-                        <p style="color: #999999; font-size: 12px; margin: 0; line-height: 1.4;">
-                          This email was sent to ${email} because you signed up for F Meta.
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
+          <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #ffffff;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background-color: #ffffff; padding: 30px; border: 1px solid #dddddd;">
+                <h2 style="color: #333333; font-size: 20px; margin-bottom: 20px;">Verify your email address</h2>
+                <p style="color: #333333; font-size: 15px; line-height: 1.5; margin-bottom: 15px;">Hi ${name},</p>
+                <p style="color: #333333; font-size: 15px; line-height: 1.5; margin-bottom: 20px;">
+                  Thank you for registering with F Meta. Please verify your email address by clicking the button below:
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${verificationUrl}" style="display: inline-block; background-color: #0066cc; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 4px; font-size: 15px;">Verify Email</a>
+                </div>
+                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin-bottom: 15px;">
+                  If the button doesn't work, copy and paste this link into your browser:
+                </p>
+                <p style="color: #0066cc; font-size: 13px; word-break: break-all; margin-bottom: 20px;">
+                  ${verificationUrl}
+                </p>
+                <p style="color: #666666; font-size: 13px; line-height: 1.5; margin-bottom: 10px;">
+                  This link will expire in 24 hours.
+                </p>
+                <p style="color: #666666; font-size: 13px; line-height: 1.5;">
+                  If you didn't create this account, please ignore this email.
+                </p>
+                <hr style="border: none; border-top: 1px solid #dddddd; margin: 25px 0;">
+                <p style="color: #999999; font-size: 12px; line-height: 1.4; margin: 0;">
+                  F Meta Team<br>
+                  This is an automated message, please do not reply to this email.
+                </p>
+              </div>
+            </div>
           </body>
           </html>
         `,
         headers: {
-          'X-Priority': '1',
-          'X-MSMail-Priority': 'High',
-          'Importance': 'high',
-          'X-Entity-Ref-ID': `fmeta-${Date.now()}`,
-          'Message-ID': `<${Date.now()}.${email.replace('@', '-at-')}@fmeta.app>`,
+          'List-Unsubscribe': `<${frontendUrl}/unsubscribe>`,
+          'X-Entity-Ref-ID': crypto.randomBytes(16).toString('hex'),
+          'Message-ID': `<${crypto.randomBytes(16).toString('hex')}@fmeta.app>`,
         }
       });
       
